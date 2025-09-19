@@ -1,14 +1,22 @@
+"use client"
+
 import { Logo } from "@/components/common/logo"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { copy } from "@/lib/copy"
 import { icons } from "@/lib/icons"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function HomePage() {
   const MapIcon = icons.map
   const CalendarIcon = icons.calendar
   const WalletIcon = icons.wallet
+  const router = useRouter()
+
+  const handleViewExample = () => {
+    router.push("/dashboard/resultados")
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary">
@@ -43,7 +51,7 @@ export default function HomePage() {
                 {copy.buttons.planTrip}
               </Button>
             </Link>
-            <Button size="lg" variant="outline" onClick={() => window.location.href = "/dashboard/resultados"}>
+            <Button size="lg" variant="outline" onClick={handleViewExample}>
               Ver ejemplo
             </Button>
           </div>
