@@ -195,6 +195,12 @@ export default function PlanPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
+        
+        // Manejar específicamente el error 504 (timeout)
+        if (response.status === 504) {
+          throw new Error('La solicitud está tardando demasiado tiempo. Por favor, intenta con un viaje más corto o con menos preferencias.')
+        }
+        
         throw new Error(errorData.error || 'Error al generar el itinerario')
       }
 

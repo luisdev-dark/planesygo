@@ -271,6 +271,18 @@ Te recomendamos intentar generar el itinerario nuevamente más tarde para obtene
       timestamp: new Date().toISOString()
     };
     
+    // Si el error es un timeout (504), devolver un mensaje más específico
+    if (errorMessage.includes('timeout') || errorMessage.includes('504')) {
+      return NextResponse.json(
+        {
+          error: 'Tiempo de espera agotado',
+          details: 'La solicitud está tardando más de lo esperado. Por favor, intenta de nuevo más tarde o reduce la cantidad de información a procesar.',
+          suggestion: 'Intenta con un destino más específico o menos días de viaje.'
+        },
+        { status: 504 }
+      );
+    }
+    
     return NextResponse.json(
       {
         error: 'Error al generar el itinerario',
