@@ -7,7 +7,7 @@ import { SSEConnection, createSSEHandler, SSEEvents } from '@/lib/sse';
 import { rateLimiter } from '@/lib/rate-limit';
 import { securityManager } from '@/lib/security';
 
-export const runtime = 'edge';
+// export const runtime = 'edge';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
