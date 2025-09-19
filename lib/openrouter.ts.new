@@ -1,0 +1,94 @@
+import OpenAI from 'openai';
+import { createItineraryPrompt, createChatPrompt, ItineraryPromptOptions } from './prompts';
+
+const openai = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY || '',
+  defaultHeaders: {
+    'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    'X-Title': 'Viajesmart - Planificador de viajes',
+  },
+});
+
+export interface ItineraryParams {
+  destination: string;
+  days: number;
+  budget: number;
+  travelStyle: string;
+  preferences: string[];
+  context: string;
+  currency?: string;
+  sources?: any[];
+}
+
+export async function generateItinerary(params: ItineraryParams): Promise<{ text: string; sources?: any[] }> {
+  const { destination, days, budget, travelStyle, preferences, context, currency = 'USD', sources } = params;
+
+  const promptOptions: ItineraryPromptOptions = {
+    destination,
+    days,
+    budget,
+    currency,
+    travelStyle,
+    preferences,
+    context,
+    sources,
+    includePrices: true,
+    includeWeather: true,
+    includeTransport: true,
+    includeFood: true
+  };
+
+  const prompt = createItineraryPrompt(promptOptions);
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'qwen/qwen3-next-80b-a3b-thinking',
+      messages: [
+        {
+          role: 'system',
+          content: 'Eres un asistente experto en planificación de viajes que crea itinerarios personalizados y detallados con citas a fuentes confiables.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 4000,
+    });
+
+    const itineraryText = completion.choices[0].message.content || 'No se pudo generar el itinerario.';
+    
+    return {
+      text: itineraryText,
+      sources
+    };
+  } catch (error) {
+    console.error('Error al generar itinerario con OpenRouter:', error);
+    throw new Error('Error al generar el itinerario con IA');
+  }
+}
+
+export async function chatWithAssistant(message: string, context?: string, history?: Array<{role: string, content: string}>): Promise<string> {
+  try {
+    const prompt = createChatPrompt(message, context, history);
+
+    const completion = await openai.chat.completions.create({
+      model: 'qwen/qwen3-next-80b-a3b-thinking',
+      messages: [
+        {
+          role: 'system',
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 1000,
+    });
+
+    return completion.choices[0].message.content || 'No se pudo generar una respuesta.';
+  } catch (error) {
+    console.error('Error en el chat con el asistente:', error);
+    throw new Error('Error al comunicarse con el asistente de IA');
+  }
+}

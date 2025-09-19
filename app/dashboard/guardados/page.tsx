@@ -1,0 +1,278 @@
+"use client"
+
+import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { copy } from "@/lib/copy"
+import { icons } from "@/lib/icons"
+
+interface SavedTrip {
+  id: string
+  title: string
+  destination: string
+  date: string
+  duration: number
+  budget: number
+  currency: string
+  tags: string[]
+  thumbnail: string
+}
+
+// Mock data for demonstration
+const mockSavedTrips: SavedTrip[] = [
+  {
+    id: "1",
+    title: "Verano en Barcelona",
+    destination: "Barcelona, España",
+    date: "2024-06-15",
+    duration: 7,
+    budget: 1500,
+    currency: "EUR",
+    tags: ["Cultural", "Gastronomía", "Playa"],
+    thumbnail: "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=500&h=300&fit=crop",
+  },
+  {
+    id: "2",
+    title: "Aventura en la Selva Amazónica",
+    destination: "Amazonas, Brasil",
+    date: "2024-08-20",
+    duration: 10,
+    budget: 2500,
+    currency: "USD",
+    tags: ["Aventura", "Naturaleza", "Ecoturismo"],
+    thumbnail: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=500&h=300&fit=crop",
+  },
+  {
+    id: "3",
+    title: "Tour por Japón",
+    destination: "Tokio, Kioto, Osaka",
+    date: "2024-10-05",
+    duration: 14,
+    budget: 3500,
+    currency: "USD",
+    tags: ["Cultural", "Tecnología", "Gastronomía"],
+    thumbnail: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=500&h=300&fit=crop",
+  },
+]
+
+export default function GuardadosPage() {
+  const [savedTrips, setSavedTrips] = useState<SavedTrip[]>(mockSavedTrips)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [sortBy, setSortBy] = useState("date")
+  const [filterTag, setFilterTag] = useState("all")
+
+  const SearchIcon = icons.search
+  const FilterIcon = icons.filter
+  const SortAscIcon = icons.chevronDown
+  const CalendarIcon = icons.calendar
+  const MapPinIcon = icons.mapPin
+  const WalletIcon = icons.wallet
+  const MoreHorizontalIcon = icons.chevronRight
+  const TrashIcon = icons.trash
+  const ShareIcon = icons.share
+  const EditIcon = icons.edit
+
+  // Get all unique tags
+  const allTags = Array.from(new Set(savedTrips.flatMap((trip) => trip.tags)))
+
+  // Filter and sort trips
+  const filteredTrips = savedTrips
+    .filter((trip) => {
+      const matchesSearch =
+        trip.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        trip.destination.toLowerCase().includes(searchTerm.toLowerCase())
+      const matchesTag = filterTag === "all" || trip.tags.includes(filterTag)
+      return matchesSearch && matchesTag
+    })
+    .sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(b.date).getTime() - new Date(a.date).getTime()
+      } else if (sortBy === "budget") {
+        return b.budget - a.budget
+      } else if (sortBy === "duration") {
+        return b.duration - a.duration
+      }
+      return 0
+    })
+
+  const handleDeleteTrip = (id: string) => {
+    setSavedTrips(savedTrips.filter((trip) => trip.id !== id))
+  }
+
+  return (
+    <div className="p-4 lg:p-6 space-y-6">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold">Viajes Guardados</h1>
+        <p className="text-muted-foreground">Accede a tus itinerarios guardados y planifica futuras aventuras</p>
+      </div>
+
+      {/* Search and filters */}
+      <Card className="rounded-2xl shadow-lg border-0">
+        <CardContent className="pt-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar viajes guardados..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 rounded-xl"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Select value={filterTag} onValueChange={setFilterTag}>
+                <SelectTrigger className="w-40 rounded-xl">
+                  <FilterIcon className="mr-2 h-4 w-4" />
+                  Filtro
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {allTags.map((tag) => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-40 rounded-xl">
+                  <SortAscIcon className="mr-2 h-4 w-4" />
+                  Ordenar
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Fecha</SelectItem>
+                  <SelectItem value="budget">Presupuesto</SelectItem>
+                  <SelectItem value="duration">Duración</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Results count */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {filteredTrips.length} {filteredTrips.length === 1 ? "viaje encontrado" : "viajes encontrados"}
+        </p>
+        <Button className="bg-cta hover:bg-cta-hover text-cta-foreground rounded-xl">
+          <icons.plus className="mr-2 h-4 w-4" />
+          Nuevo Viaje
+        </Button>
+      </div>
+
+      {/* Saved trips grid */}
+      {filteredTrips.length > 0 ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredTrips.map((trip) => (
+            <Card key={trip.id} className="rounded-2xl shadow-lg border-0 overflow-hidden">
+              {/* Trip thumbnail */}
+              <div className="aspect-video relative">
+                <img
+                  src={trip.thumbnail}
+                  alt={trip.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-3 right-3">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="h-8 w-8 rounded-full bg-white/90 hover:bg-white"
+                  >
+                    <MoreHorizontalIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Trip content */}
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold">{trip.title}</h3>
+                    <p className="text-sm text-muted-foreground">{trip.destination}</p>
+                  </div>
+
+                  {/* Trip metadata */}
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div className="flex items-center gap-1">
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                      <span>{trip.duration}d</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <WalletIcon className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        {trip.budget} {trip.currency}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <MapPinIcon className="h-4 w-4 text-muted-foreground" />
+                      <span>{new Date(trip.date).toLocaleDateString("es-ES")}</span>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-1">
+                    {trip.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="text-xs rounded-full">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" size="sm" className="flex-1 rounded-xl">
+                      Ver Detalles
+                    </Button>
+                    <Button variant="ghost" size="sm" className="rounded-xl">
+                      <ShareIcon className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="rounded-xl">
+                      <EditIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-xl text-destructive"
+                      onClick={() => handleDeleteTrip(trip.id)}
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="rounded-2xl shadow-lg border-0">
+          <CardContent className="pt-12 pb-12 text-center">
+            <div className="space-y-4">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                <icons.bookmark className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">No se encontraron viajes guardados</h3>
+                <p className="text-sm text-muted-foreground">
+                  {searchTerm || filterTag !== "all"
+                    ? "Prueba con otros filtros o términos de búsqueda"
+                    : "Guarda tus itinerarios para acceder a ellos más tarde"}
+                </p>
+              </div>
+              <Button className="bg-cta hover:bg-cta-hover text-cta-foreground rounded-xl">
+                <icons.plus className="mr-2 h-4 w-4" />
+                Planificar Nuevo Viaje
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}

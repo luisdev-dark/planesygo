@@ -1,0 +1,284 @@
+import { getJson } from 'serpapi';
+
+export interface SearchResult {
+  title: string;
+  link: string;
+  snippet: string;
+  position: number;
+}
+
+export async function searchInfo(destination: string, preferences: string[]): Promise<SearchResult[]> {
+  const apiKey = process.env.SERPAPI_KEY || '';
+  
+  if (!apiKey) {
+    throw new Error('SERPAPI_KEY no está configurada');
+  }
+
+  try {
+    // Construir la consulta de búsqueda basada en el destino y preferencias
+    // Utilizando operadores avanzados para mejorar la precisión
+    const query = `turismo viajes "${destination}" ${preferences.map(pref => `intitle:${pref}`).join(' OR ')}`;
+    
+    const response = await getJson({
+      engine: 'google',
+      q: query,
+      api_key: apiKey,
+      hl: 'es', // Resultados en español
+      gl: 'es', // Configuración regional para España
+      location: 'Spain', // Ubicación para simular búsquedas reales
+      num: 10, // Número de resultados por página
+      safe: 'active', // Filtro de contenido para adultos
+      filter: '1', // Activar "Resultados Similares"
+      no_cache: 'false', // Permitir caché para mejor rendimiento
+      output: 'json', // Formato de respuesta JSON
+    });
+
+    // Extraer los resultados relevantes
+    const results: SearchResult[] = response.organic_results?.map((result: any, index: number) => ({
+      title: result.title || '',
+      link: result.link || '',
+      snippet: result.snippet || '',
+      position: index + 1,
+    })) || [];
+
+    // También incluir resultados locales si están disponibles
+    if (response.local_results) {
+      const localResults: SearchResult[] = response.local_results.map((result: any, index: number) => ({
+        title: result.title || '',
+        link: result.link || result.website || '',
+        snippet: result.snippet || result.description || '',
+        position: results.length + index + 1,
+      }));
+      results.push(...localResults);
+    }
+
+    // Incluir resultados del Knowledge Graph si están disponibles
+    if (response.knowledge_graph) {
+      const kgResult: SearchResult = {
+        title: response.knowledge_graph.title || '',
+        link: response.knowledge_graph.link || '',
+        snippet: response.knowledge_graph.description || '',
+        position: results.length + 1,
+      };
+      results.push(kgResult);
+    }
+
+    return results.slice(0, 10); // Limitar a 10 resultados para optimizar el procesamiento
+  } catch (error) {
+    console.error('Error en la búsqueda con SerpAPI:', error);
+    throw new Error('Error al buscar información en la web');
+  }
+}
+
+export async function searchHotels(destination: string, checkIn: string, checkOut: string): Promise<SearchResult[]> {
+  const apiKey = process.env.SERPAPI_KEY || '';
+  
+  if (!apiKey) {
+    throw new Error('SERPAPI_KEY no está configurada');
+  }
+
+  try {
+    const response = await getJson({
+      engine: 'google_hotels',
+      q: `hoteles en "${destination}"`,
+      api_key: apiKey,
+      check_in_date: checkIn,
+      check_out_date: checkOut,
+      hl: 'es',
+      gl: 'es',
+      location: 'Spain',
+      no_cache: 'false',
+      output: 'json',
+    });
+
+    const results: SearchResult[] = response.properties?.map((property: any, index: number) => ({
+      title: property.name || '',
+      link: property.link || property.website || '',
+      snippet: `${property.rate?.per_night || 'Precio no disponible'} - ${property.rating || 'Sin calificación'} - ${property.type || ''}`,
+      position: index + 1,
+    })) || [];
+
+    return results.slice(0, 10); // Limitar a 10 resultados
+  } catch (error) {
+    console.error('Error en la búsqueda de hoteles:', error);
+    throw new Error('Error al buscar hoteles');
+  }
+}
+
+export async function searchFlights(origin: string, destination: string, departureDate: string, returnDate?: string): Promise<SearchResult[]> {
+  const apiKey = process.env.SERPAPI_KEY || '';
+  
+  if (!apiKey) {
+    throw new Error('SERPAPI_KEY no está configurada');
+  }
+
+  try {
+    const params: any = {
+      engine: 'google_flights',
+      q: `vuelos de "${origin}" a "${destination}"`,
+      api_key: apiKey,
+      departure_date: departureDate,
+      hl: 'es',
+      gl: 'es',
+      location: 'Spain',
+      no_cache: 'false',
+      output: 'json',
+    };
+
+    if (returnDate) {
+      params.return_date = returnDate;
+    }
+
+    const response = await getJson(params);
+
+    const results: SearchResult[] = response.best_flights?.map((flight: any, index: number) => ({
+      title: `${flight.airlines?.join(', ') || 'Aerolínea no especificada'} - ${flight.duration || 'Duración no disponible'}`,
+      link: flight.booking_link || '',
+      snippet: `Precio: ${flight.price || 'No disponible'} - Escalas: ${flight.stops || 0}`,
+      position: index + 1,
+    })) || [];
+
+    return results.slice(0, 10); // Limitar a 10 resultados
+  } catch (error) {
+    console.error('Error en la búsqueda de vuelos:', error);
+    throw new Error('Error al buscar vuelos');
+  }
+}
+
+// Nueva función para buscar actividades y atracciones turísticas
+export async function searchActivities(destination: string, preferences: string[]): Promise<SearchResult[]> {
+  const apiKey = process.env.SERPAPI_KEY || '';
+  
+  if (!apiKey) {
+    throw new Error('SERPAPI_KEY no está configurada');
+  }
+
+  try {
+    // Construir consulta específica para actividades turísticas
+    const query = `actividades turísticas atracciones "${destination}" ${preferences.map(pref => `intitle:${pref}`).join(' OR ')}`;
+    
+    const response = await getJson({
+      engine: 'google',
+      q: query,
+      api_key: apiKey,
+      hl: 'es',
+      gl: 'es',
+      location: 'Spain',
+      tbm: 'lcl', // Búsqueda local
+      num: 10,
+      safe: 'active',
+      filter: '1',
+      no_cache: 'false',
+      output: 'json',
+    });
+
+    const results: SearchResult[] = [];
+
+    // Procesar resultados orgánicos
+    if (response.organic_results) {
+      const organicResults: SearchResult[] = response.organic_results.map((result: any, index: number) => ({
+        title: result.title || '',
+        link: result.link || '',
+        snippet: result.snippet || '',
+        position: index + 1,
+      }));
+      results.push(...organicResults);
+    }
+
+    // Procesar resultados locales
+    if (response.local_results) {
+      const localResults: SearchResult[] = response.local_results.map((result: any, index: number) => ({
+        title: result.title || '',
+        link: result.link || result.website || '',
+        snippet: result.snippet || result.description || '',
+        position: results.length + index + 1,
+      }));
+      results.push(...localResults);
+    }
+
+    // Procesar resultados de Places si están disponibles
+    if (response.places_results) {
+      const placesResults: SearchResult[] = response.places_results.map((result: any, index: number) => ({
+        title: result.title || result.name || '',
+        link: result.link || result.website || result.data_cid ? `https://maps.google.com/?cid=${result.data_cid}` : '',
+        snippet: result.snippet || result.description || result.type || '',
+        position: results.length + index + 1,
+      }));
+      results.push(...placesResults);
+    }
+
+    return results.slice(0, 15); // Permitir más resultados para actividades
+  } catch (error) {
+    console.error('Error en la búsqueda de actividades:', error);
+    throw new Error('Error al buscar actividades turísticas');
+  }
+}
+
+// Nueva función para buscar restaurantes y gastronomía local
+export async function searchRestaurants(destination: string, preferences: string[]): Promise<SearchResult[]> {
+  const apiKey = process.env.SERPAPI_KEY || '';
+  
+  if (!apiKey) {
+    throw new Error('SERPAPI_KEY no está configurada');
+  }
+
+  try {
+    // Construir consulta específica para restaurantes
+    const query = `restaurantes gastronomía "${destination}" ${preferences.map(pref => `intitle:${pref}`).join(' OR ')}`;
+    
+    const response = await getJson({
+      engine: 'google',
+      q: query,
+      api_key: apiKey,
+      hl: 'es',
+      gl: 'es',
+      location: 'Spain',
+      tbm: 'lcl', // Búsqueda local
+      num: 10,
+      safe: 'active',
+      filter: '1',
+      no_cache: 'false',
+      output: 'json',
+    });
+
+    const results: SearchResult[] = [];
+
+    // Procesar resultados orgánicos
+    if (response.organic_results) {
+      const organicResults: SearchResult[] = response.organic_results.map((result: any, index: number) => ({
+        title: result.title || '',
+        link: result.link || '',
+        snippet: result.snippet || '',
+        position: index + 1,
+      }));
+      results.push(...organicResults);
+    }
+
+    // Procesar resultados locales
+    if (response.local_results) {
+      const localResults: SearchResult[] = response.local_results.map((result: any, index: number) => ({
+        title: result.title || '',
+        link: result.link || result.website || '',
+        snippet: result.snippet || result.description || `${result.rating || ''} ${result.reviews || ''}`,
+        position: results.length + index + 1,
+      }));
+      results.push(...localResults);
+    }
+
+    // Procesar resultados de Places si están disponibles
+    if (response.places_results) {
+      const placesResults: SearchResult[] = response.places_results.map((result: any, index: number) => ({
+        title: result.title || result.name || '',
+        link: result.link || result.website || result.data_cid ? `https://maps.google.com/?cid=${result.data_cid}` : '',
+        snippet: result.snippet || result.description || result.type || `${result.rating || ''} ${result.reviews || ''}`,
+        position: results.length + index + 1,
+      }));
+      results.push(...placesResults);
+    }
+
+    return results.slice(0, 15); // Permitir más resultados para restaurantes
+  } catch (error) {
+    console.error('Error en la búsqueda de restaurantes:', error);
+    throw new Error('Error al buscar restaurantes');
+  }
+}

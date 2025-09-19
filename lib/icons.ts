@@ -1,0 +1,123 @@
+// Mapa de iconos lucide-react para ViajeSmart
+import {
+  Map,
+  MapPin,
+  Navigation,
+  Route,
+  Bus,
+  Train,
+  Plane,
+  Car,
+  Clock,
+  Calendar,
+  Sun,
+  CloudRain,
+  Cloud,
+  Wallet,
+  WalletCards,
+  Coins,
+  Banknote,
+  DollarSign,
+  Utensils,
+  Camera,
+  Mountain,
+  Landmark,
+  TreePine,
+  Building,
+  Save,
+  Download,
+  Share2,
+  Settings,
+  SlidersHorizontal,
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  Filter,
+  Home,
+  List,
+  Bookmark,
+  User,
+  LogOut,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  Info,
+  Github,
+  Mail,
+} from "lucide-react"
+
+export const icons = {
+  // Viaje y Mapa
+  map: Map,
+  mapPin: MapPin,
+  navigation: Navigation,
+  route: Route,
+  bus: Bus,
+  train: Train,
+  plane: Plane,
+  car: Car,
+
+  // Tiempo
+  clock: Clock,
+  calendar: Calendar,
+  sun: Sun,
+  cloudRain: CloudRain,
+  cloud: Cloud,
+
+  // Presupuesto
+  wallet: Wallet,
+  walletCards: WalletCards,
+  coins: Coins,
+  banknote: Banknote,
+  dollarSign: DollarSign,
+
+  // Actividades
+  utensils: Utensils,
+  camera: Camera,
+  mountain: Mountain,
+  landmark: Landmark,
+  treePine: TreePine,
+  building: Building,
+
+  // Sistema
+  save: Save,
+  download: Download,
+  share: Share2,
+  settings: Settings,
+  sliders: SlidersHorizontal,
+  plus: Plus,
+  edit: Edit,
+  trash: Trash2,
+  search: Search,
+  filter: Filter,
+
+  // Navegación
+  home: Home,
+  list: List,
+  bookmark: Bookmark,
+  user: User,
+  logout: LogOut,
+  menu: Menu,
+  close: X,
+  chevronLeft: ChevronLeft,
+  chevronRight: ChevronRight,
+  chevronDown: ChevronDown,
+
+  // Estados
+  loading: Loader2,
+  alertCircle: AlertCircle,
+  checkCircle: CheckCircle,
+  info: Info,
+
+  // Redes sociales
+  github: Github,
+  mail: Mail,
+} as const
+
+export type IconName = keyof typeof icons
